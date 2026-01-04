@@ -1,60 +1,89 @@
 import streamlit as st
 import numpy as np
 import joblib
+import pandas as pd
 from sklearn.datasets import load_iris
 
 # =========================
-# Load trained model
+# Page Configuration
 # =========================
-model = joblib.load("iris_random_forest_model.pkl")
+st.set_page_config(
+    page_title="Iris Flower Predictor",
+    page_icon="🌸",
+    layout="centered"
+)
 
-# Load iris dataset (for class names)
+# =========================
+# Load Model (Cached)
+# =========================
+@st.cache_resource
+def load_model():
+    return joblib.load("iris_random_forest_model.pkl")
+
+model = load_model()
+
+# Load iris dataset
 iris = load_iris()
 
 # =========================
-# App Title
+# Sidebar - User Inputs
+# =========================
+st.sidebar.title("🌼 Input Features")
+
+sepal_length = st.sidebar.slider("Sepal Length (cm)", 4.0, 8.0, 5.1)
+sepal_width  = st.sidebar.slider("Sepal Width (cm)", 2.0, 4.5, 3.5)
+petal_length = st.sidebar.slider("Petal Length (cm)", 1.0, 7.0, 1.4)
+petal_width  = st.sidebar.slider("Petal Width (cm)", 0.1, 2.5, 0.2)
+
+# =========================
+# Main Title
 # =========================
 st.title("🌸 Iris Flower Prediction App")
-st.write("Predict Iris species using Random Forest model")
+st.write("Predict Iris species using a **Random Forest Classifier**")
 
 # =========================
-# User Inputs
+# Display Input Summary
 # =========================
-st.subheader("Enter Flower Measurements")
+input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
 
-sepal_length = st.number_input(
-    "Sepal Length (cm)", min_value=4.0, max_value=8.0, value=5.1
+st.subheader("📊 Input Measurements")
+input_df = pd.DataFrame(
+    input_data,
+    columns=["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"]
 )
-
-sepal_width = st.number_input(
-    "Sepal Width (cm)", min_value=2.0, max_value=4.5, value=3.5
-)
-
-petal_length = st.number_input(
-    "Petal Length (cm)", min_value=1.0, max_value=7.0, value=1.4
-)
-
-petal_width = st.number_input(
-    "Petal Width (cm)", min_value=0.1, max_value=2.5, value=0.2
-)
+st.dataframe(input_df, use_container_width=True)
 
 # =========================
 # Prediction
 # =========================
-if st.button("Predict"):
-    
-    # Convert inputs to numpy array
-    input_data = np.array([
-        [sepal_length, sepal_width, petal_length, petal_width]
-    ])
+if st.button("🔍 Predict Species"):
 
-    # Make prediction
     prediction = model.predict(input_data)
+    prediction_proba = model.predict_proba(input_data)
+
     predicted_class = iris.target_names[prediction][0]
 
-    # Show result
-    st.success(f"🌼 Predicted Iris Species: **{predicted_class}**")
+    # =========================
+    # Result
+    # =========================
+    st.success(f"🌼 **Predicted Species:** {predicted_class.upper()}")
 
-    # Optional: show input values
-    st.write("### Input Features")
-    st.write(input_data)
+    # =========================
+    # Confidence Bars
+    # =========================
+    st.subheader("📈 Prediction Confidence")
+
+    proba_df = pd.DataFrame(
+        prediction_proba,
+        columns=iris.target_names
+    ).T
+
+    proba_df.columns = ["Confidence"]
+
+    st.bar_chart(proba_df)
+
+# =========================
+# Footer
+# =========================
+st.markdown("---")
+st.caption("📌 Built with Streamlit & Scikit-learn | Random Forest Model")
