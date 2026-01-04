@@ -1,25 +1,60 @@
 import streamlit as st
 import numpy as np
 import joblib
+from sklearn.datasets import load_iris
 
-st.set_page_config(page_title="Iris Prediction")
+# =========================
+# Load trained model
+# =========================
+model = joblib.load("iris_random_forest_model.pkl")
 
-st.title("🌸 Iris Flower Classification")
-st.write("Predict the species of Iris flower using Decision Tree Model")
+# Load iris dataset (for class names)
+iris = load_iris()
 
-# Load model
-model = joblib.load("iris_decision_tree_model.pkl")
+# =========================
+# App Title
+# =========================
+st.title("🌸 Iris Flower Prediction App")
+st.write("Predict Iris species using Random Forest model")
 
-st.header("Input Features")
+# =========================
+# User Inputs
+# =========================
+st.subheader("Enter Flower Measurements")
 
-sepal_length = st.number_input("Sepal Length (cm)", min_value=4.0, max_value=8.0, value=5.8)
-sepal_width  = st.number_input("Sepal Width (cm)", min_value=2.0, max_value=4.5, value=3.0)
-petal_length = st.number_input("Petal Length (cm)", min_value=1.0, max_value=7.0, value=4.0)
-petal_width  = st.number_input("Petal Width (cm)", min_value=0.1, max_value=2.5, value=1.2)
+sepal_length = st.number_input(
+    "Sepal Length (cm)", min_value=4.0, max_value=8.0, value=5.1
+)
 
+sepal_width = st.number_input(
+    "Sepal Width (cm)", min_value=2.0, max_value=4.5, value=3.5
+)
+
+petal_length = st.number_input(
+    "Petal Length (cm)", min_value=1.0, max_value=7.0, value=1.4
+)
+
+petal_width = st.number_input(
+    "Petal Width (cm)", min_value=0.1, max_value=2.5, value=0.2
+)
+
+# =========================
+# Prediction
+# =========================
 if st.button("Predict"):
-    input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
-    prediction = model.predict(input_data)
+    
+    # Convert inputs to numpy array
+    input_data = np.array([
+        [sepal_length, sepal_width, petal_length, petal_width]
+    ])
 
-    species = ["Setosa", "Versicolor", "Virginica"]
-    st.success(f"Predicted Species: 🌼 {species[prediction[0]]}")
+    # Make prediction
+    prediction = model.predict(input_data)
+    predicted_class = iris.target_names[prediction][0]
+
+    # Show result
+    st.success(f"🌼 Predicted Iris Species: **{predicted_class}**")
+
+    # Optional: show input values
+    st.write("### Input Features")
+    st.write(input_data)
